@@ -28,10 +28,11 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
-        const foodCollectiion = client.db('restaurantManager').collection('foods');
+        const foodCollection = client.db('restaurantManager').collection('foods');
+        const newFoodCollection = client.db('restaurantManager').collection('addedFoods');
 
         app.get('/foods', async (req, res) => {
-            const cursor = foodCollectiion.find();
+            const cursor = foodCollection.find();
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -39,7 +40,73 @@ async function run() {
         app.get('/foods/:id', async(req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
-            const result = await foodCollectiion.findOne(query);
+            const result = await foodCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/foods', async (req, res) => {
+            const newFood = req.body;
+            console.log(newFood);
+            const result = await foodCollection.insertOne(newFood);
+            res.send(result);
+        })
+
+        // app.put('/foods/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     console.log(id);
+        //     const filter = { _id: new ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedFood = req.body;
+
+        //     const food = {
+        //         $set: {
+        //             food: updatedFood.spot,
+        //             country: updatedFood.country,
+        //             location: updatedFood.location,
+        //             cost: updatedFood.cost,
+        //             seasonality: updatedFood.seasonality,
+        //             travelTime: updatedFood.travelTime,
+        //             visitors: updatedFood.visitors,
+        //             photo: updatedFood.photo,
+        //             description: updatedFood.description
+        //         }
+        //     }
+
+        //     const result = await spotCollection.updateOne(filter, spot, options);
+        //     res.send(result);
+        // });
+
+        // app.get('/foods', async (req, res) => {
+        //     const query = req.query.q;
+        //     const results = await foodCollection.find({ food_Name: new RegExp(query, 'i') }).toArray();
+        //     res.json(results);
+        //   });
+
+        app.get('/addedFoods', async (req, res) => {
+            const cursor = newFoodCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/addedFoods/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await newFoodCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.get('/foods', (req, res) => {
+            const query = req.query.q.toLowerCase();
+            const results = foodCollection.filter(item =>
+              item.foodCollection.toLowerCase().includes(query)
+            );
+            res.json(results);
+          });
+
+          app.post('/addedFoods', async (req, res) => {
+            const newFood = req.body;
+            console.log(newFood);
+            const result = await newFoodCollection.insertOne(newFood);
             res.send(result);
         })
 
