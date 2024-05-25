@@ -51,30 +51,45 @@ async function run() {
             res.send(result);
         })
 
-        // app.put('/foods/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     console.log(id);
-        //     const filter = { _id: new ObjectId(id) };
-        //     const options = { upsert: true };
-        //     const updatedFood = req.body;
+        app.put('/foods/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedFood = req.body;
 
-        //     const food = {
-        //         $set: {
-        //             food: updatedFood.spot,
-        //             country: updatedFood.country,
-        //             location: updatedFood.location,
-        //             cost: updatedFood.cost,
-        //             seasonality: updatedFood.seasonality,
-        //             travelTime: updatedFood.travelTime,
-        //             visitors: updatedFood.visitors,
-        //             photo: updatedFood.photo,
-        //             description: updatedFood.description
-        //         }
+            const food = {
+                $set: {
+                    food: updatedFood.food,
+                    category: updatedFood.category,
+                    quantity: updatedFood.quantity,
+                    price: updatedFood.price,
+                    country: updatedFood.country,
+                    description: updatedFood.description,
+                    photo: updatedFood.photo
+                }
+            }
+
+            const result = await foodCollection.updateOne(filter, food, options);
+            res.send(result);
+        });
+
+        app.delete('/foods/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await foodCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // app.get('/foods', async (req, res) => {
+        //     console.log(req.query.email);
+        //     let query = {};
+        //     if (req.query?.email) {
+        //         query = { email: req.query.email }
         //     }
-
-        //     const result = await spotCollection.updateOne(filter, spot, options);
+        //     const result = await foodCollection.find(query).toArray();
         //     res.send(result);
-        // });
+        // })
 
         // app.get('/foods', async (req, res) => {
         //     const query = req.query.q;
