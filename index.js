@@ -30,6 +30,7 @@ async function run() {
 
         const foodCollection = client.db('restaurantManager').collection('foods');
         const newFoodCollection = client.db('restaurantManager').collection('addedFoods');
+        const purchaseCollection = client.db('restaurantManager').collection('purchase');
 
         app.get('/foods', async (req, res) => {
             const cursor = foodCollection.find();
@@ -93,9 +94,26 @@ async function run() {
 
         // app.get('/foods', async (req, res) => {
         //     const query = req.query.q;
-        //     const results = await foodCollection.find({ food_Name: new RegExp(query, 'i') }).toArray();
+        //     const results = await foodCollection.find({ food_name: new RegExp(query, 'i') }).toArray();
         //     res.json(results);
         //   });
+
+        // app.post('/purchase', async (req, res) => {
+        //     try {
+        //         const { food } = req.body;
+        //         const filter = { _id: new ObjectId(food) };
+        //         const updateDoc = {
+        //             $inc: {
+        //                 orderCount: 1
+        //             }
+        //         };
+        //         const result = await purchaseCollection.updateOne(filter, updateDoc);
+        //         res.json({ message: 'Purchase recorded successfully' });
+        //     } catch (err) {
+        //         console.error('Error recording purchase:', err);
+        //         res.status(500).json({ error: 'An error occurred while recording the purchase.' });
+        //     }
+        // });
 
         app.get('/addedFoods', async (req, res) => {
             const cursor = newFoodCollection.find();
