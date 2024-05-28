@@ -115,6 +115,21 @@ async function run() {
         //     }
         // });
 
+        app.post('/purchase', async (req, res) => {
+            const purchase = req.body;
+            console.log(purchase);
+            const result = await purchaseCollection.insertOne(purchase, {purchaseDate: new Date()}, { $inc: { quantity: -1, "metrics.orders": 1, count: 1 } });
+            res.send(result);
+        })
+
+        // app.post('/purchase/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     console.log(id);
+        //     const filter = { _id: new ObjectId(id) };
+        //     const result = await purchaseCollection.updateOne(filter,  );
+        //     res.send(result);
+        // });
+
         app.get('/addedFoods', async (req, res) => {
             const cursor = newFoodCollection.find();
             const result = await cursor.toArray();
