@@ -5,7 +5,7 @@ require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
 
-// middlewaare
+// middleware
 app.use(cors());
 app.use(express.json());
 
@@ -25,7 +25,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
         const foodCollection = client.db('restaurantManager').collection('foods');
@@ -33,12 +32,12 @@ async function run() {
         const purchaseCollection = client.db('restaurantManager').collection('purchase');
 
         app.get('/foods', async (req, res) => {
-            const cursor = foodCollection.find();
+            const cursor = foodCollection.find({ purchaseCount: { $exists: true } });
             const result = await cursor.toArray();
             res.send(result);
         })
 
-        app.get('/foods/:id', async(req, res) => {
+        app.get('/foods/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await foodCollection.findOne(query);
@@ -82,53 +81,70 @@ async function run() {
             res.send(result);
         })
 
-        // app.get('/foods', async (req, res) => {
-        //     console.log(req.query.email);
-        //     let query = {};
-        //     if (req.query?.email) {
-        //         query = { email: req.query.email }
-        //     }
-        //     const result = await foodCollection.find(query).toArray();
-        //     res.send(result);
-        // })
-
-        // app.get('/foods', async (req, res) => {
-        //     const query = req.query.q;
-        //     const results = await foodCollection.find({ food_name: new RegExp(query, 'i') }).toArray();
-        //     res.json(results);
-        //   });
-
-        // app.post('/purchase', async (req, res) => {
-        //     try {
-        //         const { food } = req.body;
-        //         const filter = { _id: new ObjectId(food) };
-        //         const updateDoc = {
-        //             $inc: {
-        //                 orderCount: 1
-        //             }
-        //         };
-        //         const result = await purchaseCollection.updateOne(filter, updateDoc);
-        //         res.json({ message: 'Purchase recorded successfully' });
-        //     } catch (err) {
-        //         console.error('Error recording purchase:', err);
-        //         res.status(500).json({ error: 'An error occurred while recording the purchase.' });
-        //     }
-        // });
-
         app.post('/purchase', async (req, res) => {
             const purchase = req.body;
             console.log(purchase);
-            const result = await purchaseCollection.insertOne(purchase, {purchaseDate: new Date()}, { $inc: { quantity: -1, "metrics.orders": 1, count: 1 } });
+            const result = await purchaseCollection.insertOne(purchase);
             res.send(result);
         })
 
-        // app.post('/purchase/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     console.log(id);
-        //     const filter = { _id: new ObjectId(id) };
-        //     const result = await purchaseCollection.updateOne(filter,  );
-        //     res.send(result);
-        // });
+        app.get('/purchase', async (req, res) => {
+            const cursor = purchaseCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/purchase/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const result = await purchaseCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        app.get('/purchase/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await purchaseCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.delete('/purchase/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await purchaseCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        app.put('/foods/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const updatedFood = req.body;
+            const count = updatedFood.purchaseCount;
+        
+            const updateDoc = {
+                $inc: { count: 1 }, 
+                $set: {
+                    food: updatedFood.food,
+                    category: updatedFood.category,
+                    quantity: updatedFood.quantity,
+                    price: updatedFood.price,
+                    country: updatedFood.country,
+                    description: updatedFood.description,
+                    photo: updatedFood.photo,
+                    purchaseCount: count
+                }
+            };
+        
+            try {
+                const result = await foodCollection.updateOne(query, updateDoc);
+                console.log(result);
+                res.send(result);
+            } catch (error) {
+                console.error('Error updating food:', error);
+                res.status(500).send({ message: 'Failed to update food' });
+            }
+        });
+        
 
         app.get('/addedFoods', async (req, res) => {
             const cursor = newFoodCollection.find();
@@ -136,27 +152,48 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/addedFoods/:id', async(req, res) => {
+        app.get('/addedFoods/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await newFoodCollection.findOne(query);
             res.send(result);
         })
 
-        app.get('/foods', (req, res) => {
-            const query = req.query.q.toLowerCase();
-            const results = foodCollection.filter(item =>
-              item.foodCollection.toLowerCase().includes(query)
-            );
-            res.json(results);
-          });
-
-          app.post('/addedFoods', async (req, res) => {
+        app.post('/addedFoods', async (req, res) => {
             const newFood = req.body;
             console.log(newFood);
             const result = await newFoodCollection.insertOne(newFood);
             res.send(result);
         })
+
+        app.get('/foods', async (req, res) => {
+            const search = req.query.search;
+            let query = {};
+        
+            if (search) {
+                query.name = { $regex: new RegExp(search, 'i') }; 
+            }
+        
+            try {
+                const result = await foodCollection.find(query).toArray();
+                console.log(query);
+                console.log(result);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ error: 'Internal Server Error' });
+            }
+        });
+
+        // app.get('/foods', async (req, res) => {
+        //     const searchQuery = req.query.search || '';
+        //     try {
+        //         const foods = await foodCollection.find({ food: { $regex: searchQuery, $options: 'i' } });
+        //         res.json(foods);
+        //     } catch (error) {
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+        // });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
