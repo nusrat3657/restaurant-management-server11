@@ -7,11 +7,16 @@ const port = process.env.PORT || 5000;
 
 // middleware
 // app.use(cors());
-const corsConfig = {
-    origin: ["http://localhost:5173", "http://localhost:5000/foods"],
-    credentials: true,
-  };
-  app.use(cors(corsConfig));
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "https://restaurant-management-we-21b49.web.app",
+            "https://restaurant-management-we-21b49.firebaseapp.com"
+        ],
+        credentials: true,
+    })
+);
 app.use(express.json());
 
 
@@ -30,7 +35,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        await client.connect();
+         client.connect();
 
         const foodCollection = client.db('restaurantManager').collection('foods');
         const newFoodCollection = client.db('restaurantManager').collection('addedFoods');
@@ -51,14 +56,14 @@ async function run() {
 
         app.post('/foods', async (req, res) => {
             const newFood = req.body;
-            console.log(newFood);
+            // console.log(newFood);
             const result = await foodCollection.insertOne(newFood);
             res.send(result);
         })
 
         app.put('/foods/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id);
+            // console.log(id);
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const updatedFood = req.body;
@@ -88,7 +93,7 @@ async function run() {
 
         app.post('/purchase', async (req, res) => {
             const purchase = req.body;
-            console.log(purchase);
+            // console.log(purchase);
             const result = await purchaseCollection.insertOne(purchase);
             res.send(result);
         })
@@ -125,9 +130,9 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const updatedFood = req.body;
             const count = updatedFood.purchaseCount;
-        
+
             const updateDoc = {
-                $inc: { count: 1 }, 
+                $inc: { count: 1 },
                 $set: {
                     food: updatedFood.food,
                     category: updatedFood.category,
@@ -139,17 +144,17 @@ async function run() {
                     purchaseCount: count
                 }
             };
-        
+
             try {
                 const result = await foodCollection.updateOne(query, updateDoc);
-                console.log(result);
+                // console.log(result);
                 res.send(result);
             } catch (error) {
                 console.error('Error updating food:', error);
                 res.status(500).send({ message: 'Failed to update food' });
             }
         });
-        
+
 
         app.get('/addedFoods', async (req, res) => {
             const cursor = newFoodCollection.find();
@@ -166,7 +171,7 @@ async function run() {
 
         app.post('/addedFoods', async (req, res) => {
             const newFood = req.body;
-            console.log(newFood);
+            // console.log(newFood);
             const result = await newFoodCollection.insertOne(newFood);
             res.send(result);
         })
@@ -174,15 +179,15 @@ async function run() {
         app.get('/foods', async (req, res) => {
             const search = req.query.search;
             let query = {};
-        
+
             if (search) {
-                query.name = { $regex: new RegExp(search, 'i') }; 
+                query.name = { $regex: new RegExp(search, 'i') };
             }
-        
+
             try {
                 const result = await foodCollection.find(query).toArray();
-                console.log(query);
-                console.log(result);
+                // console.log(query);
+                // console.log(result);
                 res.send(result);
             } catch (error) {
                 console.error(error);
@@ -202,7 +207,7 @@ async function run() {
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
