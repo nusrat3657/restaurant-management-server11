@@ -104,9 +104,9 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/purchase/:email', async (req, res) => {
-            const email = req.params.email;
-            const query = { email }
+        app.get('/purchase/:CustomerEmail', async (req, res) => {
+            const CustomerEmail = req.params.CustomerEmail;
+            const query = { CustomerEmail }
             const result = await purchaseCollection.find(query).toArray();
             res.send(result);
         })
@@ -127,11 +127,12 @@ async function run() {
 
         app.put('/foods/:id', async (req, res) => {
             const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
+            // console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
             const updatedFood = req.body;
-            const count = updatedFood.purchaseCount;
 
-            const updateDoc = {
+            const food = {
                 $inc: { count: 1 },
                 $set: {
                     food: updatedFood.food,
@@ -141,19 +142,43 @@ async function run() {
                     country: updatedFood.country,
                     description: updatedFood.description,
                     photo: updatedFood.photo,
-                    purchaseCount: count
+                    purchaseCount: updatedFood.purchaseCount
                 }
-            };
-
-            try {
-                const result = await foodCollection.updateOne(query, updateDoc);
-                // console.log(result);
-                res.send(result);
-            } catch (error) {
-                console.error('Error updating food:', error);
-                res.status(500).send({ message: 'Failed to update food' });
             }
+
+            const result = await foodCollection.updateOne(filter, food, options);
+            res.send(result);
         });
+
+        // app.put('/foods/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: new ObjectId(id) };
+        //     const updatedFood = req.body;
+        //     const count = updatedFood.purchaseCount;
+
+        //     const updateDoc = {
+        //         $inc: { count: 1 },
+        //         $set: {
+        //             food: updatedFood.food,
+        //             category: updatedFood.category,
+        //             quantity: updatedFood.quantity,
+        //             price: updatedFood.price,
+        //             country: updatedFood.country,
+        //             description: updatedFood.description,
+        //             photo: updatedFood.photo,
+        //             purchaseCount: count
+        //         }
+        //     };
+
+        //     try {
+        //         const result = await foodCollection.updateOne(query, updateDoc);
+        //         // console.log(result);
+        //         res.send(result);
+        //     } catch (error) {
+        //         console.error('Error updating food:', error);
+        //         res.status(500).send({ message: 'Failed to update food' });
+        //     }
+        // });
 
 
         app.get('/addedFoods', async (req, res) => {
